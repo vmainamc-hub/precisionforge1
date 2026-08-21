@@ -456,6 +456,7 @@ function ApexPage() {
           </TabsContent>
 
           <TabsContent value="learning" className="mt-5 space-y-5">
+            <GovernancePanel best={best ?? null} />
             <WhatSentinelLearned />
             <LearningDashboard />
           </TabsContent>
