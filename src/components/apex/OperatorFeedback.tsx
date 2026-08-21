@@ -22,6 +22,14 @@ import {
   type TradeRecord,
 } from "@/lib/sentinel/trade-feedback";
 import { activeDirectives, interpretFeedbackPreview } from "@/lib/sentinel/immediate-guidance";
+import {
+  createGlobalVetoRule,
+  isExplicitGlobalVetoRequest,
+  isExplicitVetoReleaseRequest,
+  recordPatternOutcome,
+  releaseAllGlobalVetoRules,
+} from "@/lib/sentinel/global-veto";
+import { buildPatternTags } from "@/lib/sentinel/pattern-tags";
 import { useGuidanceRevision, useTradeFeedbackVersion } from "@/components/apex/TradeFeedback";
 
 function fmt(ts: number) {
@@ -210,7 +218,35 @@ export function TradeDebriefComposer({
 
   const handleSave = () => {
     if (!text.trim()) return;
+    const firstSave = !trade.feedback;
     saveTradeFeedback(trade.id, text, category);
+
+    // LEVEL 1/2 GOVERNANCE — explicit operator veto language creates a hard,
+    // cross-market pattern rule; ordinary feedback keeps flowing through the
+    // bounded immediate-guidance channel only.
+    const pattern = {
+      tags: buildPatternTags({
+        contractId: trade.snapshot.contract,
+        side: trade.snapshot.contract.toUpperCase().startsWith("UNDER") ? "UNDER" : "OVER",
+        entryDigit: trade.snapshot.entryDigit,
+      }),
+      contracts: [trade.snapshot.contract],
+      entryDigit: trade.snapshot.entryDigit,
+    };
+    if (firstSave && (trade.outcome === "WIN" || trade.outcome === "LOSS")) {
+      recordPatternOutcome(pattern, trade.outcome, trade.snapshot.symbol);
+    }
+    if (isExplicitVetoReleaseRequest(text)) {
+      releaseAllGlobalVetoRules();
+    } else if (isExplicitGlobalVetoRequest(text)) {
+      createGlobalVetoRule({
+        sourceId: trade.id,
+        operatorText: text,
+        pattern,
+        reason: category ? `Operator veto — ${category}` : "Operator veto after reported loss",
+        scope: "GLOBAL",
+      });
+    }
     setSaved(true);
     if (onFinish) onFinish();
   };

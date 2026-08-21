@@ -40,6 +40,9 @@ import { operatorSpecialDigitAction } from "../sentinel/operator-special-digits"
 import { computeConvergence } from "../sentinel/convergence";
 import { operatorLearningLookup } from "../sentinel/operator-learning";
 import { immediateGuidanceLookup } from "../sentinel/immediate-guidance";
+import { evaluateSignalGovernance } from "../sentinel/global-veto";
+import { buildPatternTags } from "../sentinel/pattern-tags";
+import { buildEvidenceProfile } from "../sentinel/market-state-evidence";
 import {
   hasValidatedEntryDigit,
   qualificationFor,
@@ -776,7 +779,56 @@ export function rankOpportunities(
         });
       }
 
+      // ══ LEVELS 1 & 2 — TRADER GLOBAL RISK GOVERNANCE ═════════════════
+      // A pattern the operator explicitly vetoed can never be ranked as an
+      // opportunity again, on ANY market, regardless of statistical score.
+      // Level 2 (cross-market pattern loss memory) applies a bounded penalty.
+      const patternInputs = {
+        contractId: c.id,
+        side: c.side,
+        entryDigit: hasValidatedEntryDigit(entryPoint) ? entryPoint.preferred!.digit : null,
+        regime: regimeReport.currentRegime,
+        psychologyVerdict: digitPsychology.verdict,
+        losingSideState: c.losingSidePressure?.state ?? null,
+        alignment: priceAction.alignment,
+        entryTriggerRule: entryTrigger?.preferredTouch ?? null,
+      };
+      const governance = evaluateSignalGovernance({
+        tags: buildPatternTags(patternInputs),
+        contract: c.id,
+        entryDigit: patternInputs.entryDigit,
+        symbol: intel.symbol,
+      });
+      const governancePoints = governance.vetoed ? -100 : -governance.suggestedPenalty;
+      if (governance.vetoed || governancePoints !== 0) {
+        factors.push({
+          label: governance.vetoed
+            ? "TRADER GLOBAL VETO (Level 1)"
+            : "Global pattern risk (Level 2)",
+          points: governancePoints,
+          detail: governance.reasons.join(" "),
+        });
+      }
+      if (governance.vetoed) {
+        rejected.push({
+          symbol: intel.symbol,
+          contract: c.label,
+          reason: governance.reasons[0] ?? "VETOED — trader global risk rule.",
+        });
+      }
+
+      // ══ MARKET-STATE EVIDENCE — interpretation of the resolved sequence ══
+      // A run of wins/losses is never treated as a forecast: the resolved
+      // outcome history is read as evidence about the CURRENT market state.
+      const stateEvidence = buildEvidenceProfile(sim.perf?.recentResults ?? []);
+      factors.push({
+        label: `Market-state evidence (${stateEvidence.regime})`,
+        points: 0,
+        detail: stateEvidence.summary,
+      });
+
       const score =
+        governancePoints +
         c.opportunity +
         (preferred ? opts.preferenceWindow : 0) +
         analogueBonus +
@@ -839,10 +891,13 @@ export function rankOpportunities(
         clearance,
         evidence,
         blocked:
+          governance.vetoed ||
           clearance.state === "BLOCKED" ||
           entryClearance.verdict === "BLOCKED" ||
           digitPsychology.hardBlock ||
           priceAction.veto,
+        governance,
+        stateEvidence,
         factors,
         invalidation,
         direction,
@@ -871,6 +926,7 @@ export function rankOpportunities(
           grade: setup.grade,
           relative: "LEVEL",
           blocked:
+            governance.vetoed ||
             clearance.state === "BLOCKED" ||
             entryClearance.verdict === "BLOCKED" ||
             digitPsychology.hardBlock ||
