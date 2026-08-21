@@ -1,0 +1,543 @@
+// Advanced OVER 2 + UNDER 7 multi-market scanner.
+// 500-tick analysis window, slope/acceleration buildup detection,
+// exhaustion analysis, Over/Under-5 structural bias, manipulation filter,
+// confidence engine, cooldown + duplicate prevention, signal history,
+// and a live win-rate tracker (resolved against subsequent ticks).
+
+import { useEffect, useRef, useState } from "react";
+import { DERIV_SYMBOLS } from "./useDerivStream";
+import { derivBus } from "@/lib/deriv/tick-bus";
+import {
+  lastDigit,
+  overUnderStats,
+  marketIntel,
+  pickSafeBarrier,
+  type Tick,
+} from "@/lib/analytics";
+
+const WINDOW = 1000; // align with Digits 0–9 Live Distribution panel
+const MAX_TICKS = 1000;
+const SNAPSHOT_INTERVAL_MS = 1500; // sample digit % for slope analysis
+const SNAPSHOT_KEEP = 12; // ~18s of history per market
+const COOLDOWN_MS = 45_000;
+const RESOLUTION_TICKS = 5; // win/loss resolved against next N ticks
+const HISTORY_MAX = 25;
+const WINRATE_MAX = 100;
+
+const SCAN_SYMBOLS = DERIV_SYMBOLS.filter((s) => s.group === "Standard" || s.group === "1s");
+const SCAN_SET = new Set(SCAN_SYMBOLS.map((s) => s.symbol));
+
+export type ScanType = "OVER2" | "UNDER7";
+
+export type AdvancedSignal = {
+  id: string;
+  type: ScanType;
+  symbol: string;
+  name: string;
+  ts: number;
+  conf: number;
+  manipulation: number;
+  pOver5: number;
+  pUnder5: number;
+  greenDigits: number[]; // dominant green-bar digits
+  redDigits: number[]; // weak red-bar digits
+  buildup: { digit: number; pct: number; slope: number }[]; // hidden buildup digits
+  exhaustion: { digit: number; pct: number; flat: number }[]; // exhausting digits
+  exhaustionStatus: "CONFIRMED" | "FORMING" | "NONE";
+  momentum: "BULLISH" | "BEARISH" | "NEUTRAL";
+  entryPrice: number;
+  lastDigit: number;
+  safeBarrier: number;
+  pWin: number;
+  survival5: number;
+};
+
+type ResolvedSignal = AdvancedSignal & {
+  outcome: "WIN" | "LOSS" | "PENDING";
+  resolvedAt?: number;
+};
+
+type Snapshot = { t: number; pct: number[]; pOver5: number; pUnder5: number; pUnder4: number };
+
+function freqPct(ticks: Tick[]): number[] {
+  const f = new Array(10).fill(0);
+  for (const tk of ticks) f[lastDigit(tk.price)]++;
+  const total = Math.max(1, ticks.length);
+  return f.map((v) => v / total);
+}
+
+// Linear regression slope (% per snapshot) for a digit across snapshots.
+function slope(snapshots: Snapshot[], digit: number): number {
+  if (snapshots.length < 3) return 0;
+  const n = snapshots.length;
+  const xs = snapshots.map((_, i) => i);
+  const ys = snapshots.map((s) => s.pct[digit] ?? 0);
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0,
+    den = 0;
+  for (let i = 0; i < n; i++) {
+    num += (xs[i] - mx) * (ys[i] - my);
+    den += (xs[i] - mx) ** 2;
+  }
+  return den === 0 ? 0 : num / den;
+}
+
+function ouSlope(snapshots: Snapshot[], key: "pOver5" | "pUnder5" | "pUnder4"): number {
+  if (snapshots.length < 3) return 0;
+  const n = snapshots.length;
+  const xs = snapshots.map((_, i) => i);
+  const ys = snapshots.map((s) => s[key]);
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0,
+    den = 0;
+  for (let i = 0; i < n; i++) {
+    num += (xs[i] - mx) * (ys[i] - my);
+    den += (xs[i] - mx) ** 2;
+  }
+  return den === 0 ? 0 : num / den;
+}
+
+// Flatness (lower = more exhausted). Compares slope vs early growth.
+function flatness(snapshots: Snapshot[], digit: number): number {
+  if (snapshots.length < 4) return 0;
+  const recent = snapshots.slice(-3).map((s) => s.pct[digit]);
+  const early = snapshots.slice(0, 3).map((s) => s.pct[digit]);
+  const recentMean = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const earlyMean = early.reduce((a, b) => a + b, 0) / early.length;
+  // 1 when fully flat/declining, 0 when still expanding fast
+  return Math.max(0, Math.min(1, 1 - Math.max(0, recentMean - earlyMean) * 25));
+}
+
+export function useAdvancedOverUnderScan(enabled: boolean) {
+  const [over2Signals, setOver2Signals] = useState<AdvancedSignal[]>([]);
+  const [under7Signals, setUnder7Signals] = useState<AdvancedSignal[]>([]);
+  const [over2History, setOver2History] = useState<ResolvedSignal[]>([]);
+  const [under7History, setUnder7History] = useState<ResolvedSignal[]>([]);
+  const [over2WinRate, setOver2WinRate] = useState<{ wins: number; losses: number }>({
+    wins: 0,
+    losses: 0,
+  });
+  const [under7WinRate, setUnder7WinRate] = useState<{ wins: number; losses: number }>({
+    wins: 0,
+    losses: 0,
+  });
+  const [status, setStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
+
+  const ticksRef = useRef<Record<string, Tick[]>>({});
+  const snapshotsRef = useRef<Record<string, Snapshot[]>>({});
+  const lastSnapshotAt = useRef<Record<string, number>>({});
+  const o2CooldownRef = useRef<Record<string, number>>({});
+  const u7CooldownRef = useRef<Record<string, number>>({});
+  const pendingRef = useRef<{ sig: ResolvedSignal; remaining: number; hadWin: boolean }[]>([]);
+
+  useEffect(() => {
+    if (!enabled) {
+      ticksRef.current = {};
+      snapshotsRef.current = {};
+      setOver2Signals([]);
+      setUnder7Signals([]);
+      setStatus("idle");
+      return;
+    }
+
+    setStatus("connecting");
+    ticksRef.current = {};
+    snapshotsRef.current = {};
+    lastSnapshotAt.current = {};
+    pendingRef.current = [];
+
+    let raf: number | null = null;
+    // LATENCY: coalesce full-universe sweeps to a fixed cadence rather than
+    // running one per incoming tick across all subscribed markets.
+    const MIN_SCAN_MS = 400;
+    let lastRun = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleRecompute = () => {
+      if (raf !== null || timer !== null) return;
+      const wait = Math.max(0, MIN_SCAN_MS - (Date.now() - lastRun));
+      if (wait > 0) {
+        timer = setTimeout(() => {
+          timer = null;
+          scheduleRecompute();
+        }, wait);
+        return;
+      }
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        lastRun = Date.now();
+        const now = Date.now();
+        const o2: AdvancedSignal[] = [];
+        const u7: AdvancedSignal[] = [];
+        const newO2History: ResolvedSignal[] = [];
+        const newU7History: ResolvedSignal[] = [];
+
+        for (const s of SCAN_SYMBOLS) {
+          const allTicks = ticksRef.current[s.symbol];
+          if (!allTicks || allTicks.length < WINDOW) continue;
+          const ticks = allTicks.slice(-WINDOW);
+
+          const pct = freqPct(ticks);
+          const ou5 = overUnderStats(ticks, 5);
+          const intel = marketIntel(ticks);
+
+          // ---- maintain snapshot history per symbol ----
+          if (now - (lastSnapshotAt.current[s.symbol] ?? 0) >= SNAPSHOT_INTERVAL_MS) {
+            const arr = snapshotsRef.current[s.symbol] ?? [];
+            const pUnder4 = pct[0] + pct[1] + pct[2] + pct[3];
+            arr.push({ t: now, pct, pOver5: ou5.pOver, pUnder5: ou5.pUnder, pUnder4 });
+            while (arr.length > SNAPSHOT_KEEP) arr.shift();
+            snapshotsRef.current[s.symbol] = arr;
+            lastSnapshotAt.current[s.symbol] = now;
+          }
+          const snaps = snapshotsRef.current[s.symbol] ?? [];
+
+          const lastTick = ticks[ticks.length - 1];
+          const entryPrice = lastTick.price;
+          const lastD = lastDigit(entryPrice);
+
+          // Identify hot (highest %) and cold (lowest %) digits.
+          let hotD = 0,
+            coldD = 0;
+          for (let i = 1; i < 10; i++) {
+            if (pct[i] > pct[hotD]) hotD = i;
+            if (pct[i] < pct[coldD]) coldD = i;
+          }
+
+          // ============ OVER 2 STRATEGY ============
+          // Setup: low digits (0,1,2) dominated but exhausting; high digits
+          // (7,8,9) suppressed but quietly rising → expect shift > 2.
+          {
+            const sl0 = slope(snaps, 0);
+            const sl1 = slope(snaps, 1);
+            const sl2 = slope(snaps, 2);
+            const sl7 = slope(snaps, 7);
+            const sl8 = slope(snaps, 8);
+            const sl9 = slope(snaps, 9);
+            const flat0 = flatness(snaps, 0);
+            const flat1 = flatness(snaps, 1);
+            const flat2 = flatness(snaps, 2);
+
+            // Hot/cold placement gate (user-specified).
+            const hotOk = hotD === 0 || hotD === 2 || hotD === 4;
+            const coldOk = coldD === 5 || coldD === 7 || coldD === 9;
+
+            // Digits 0,1,2 elevated above expected 10% (≥2 of 3 must qualify).
+            const lowsCount = [pct[0], pct[1], pct[2]].filter((p) => p > 0.105).length;
+            const lowsElevated = lowsCount >= 2;
+            // ...and exhausting (flat / not climbing) — ≥2 of 3.
+            const exhCount =
+              (flat0 > 0.5 || sl0 <= 0 ? 1 : 0) +
+              (flat1 > 0.5 || sl1 <= 0 ? 1 : 0) +
+              (flat2 > 0.5 || sl2 <= 0 ? 1 : 0);
+            const lowsExhausting = exhCount >= 2;
+            const exhaustConfirmed = lowsElevated && flat0 > 0.55 && flat1 > 0.55 && flat2 > 0.55;
+
+            // Digits 7,8,9 suppressed AND ≥2 of 3 rising (hidden buildup).
+            const highsCount = [pct[7], pct[8], pct[9]].filter((p) => p < 0.105).length;
+            const highsSuppressed = highsCount >= 2;
+            const risingCount = [sl7, sl8, sl9].filter((s) => s > 0).length;
+            const highsRising = risingCount >= 2;
+
+            const manipOk = intel.manipulation < 0.2;
+            const allOk =
+              hotOk &&
+              coldOk &&
+              lowsElevated &&
+              lowsExhausting &&
+              highsSuppressed &&
+              highsRising &&
+              manipOk &&
+              snaps.length >= 3;
+
+            if (allOk) {
+              const base = 65;
+              const lowEdge = Math.min(15, (pct[0] + pct[1] + pct[2] - 0.33) * 100);
+              const highBuild = Math.min(15, Math.max(0, sl7 + sl8 + sl9) * 400);
+              const calm = Math.max(0, 0.3 - intel.manipulation) * 30;
+              const exh = exhaustConfirmed ? 8 : 4;
+              const finalConf = Math.min(
+                98,
+                Math.max(70, Math.round(base + lowEdge + highBuild + calm + exh)),
+              );
+
+              const safe = pickSafeBarrier(ticks, "OVER", 5, 0.8);
+              const sig: AdvancedSignal = {
+                id: `o2-${s.symbol}-${now}`,
+                type: "OVER2",
+                symbol: s.symbol,
+                name: s.name,
+                ts: now,
+                conf: finalConf,
+                manipulation: intel.manipulation,
+                pOver5: ou5.pOver,
+                pUnder5: ou5.pUnder,
+                greenDigits: [0, 2, 4],
+                redDigits: [5, 7, 9],
+                buildup: [
+                  { digit: 7, pct: pct[7], slope: sl7 },
+                  { digit: 8, pct: pct[8], slope: sl8 },
+                  { digit: 9, pct: pct[9], slope: sl9 },
+                ],
+                exhaustion: [
+                  { digit: 0, pct: pct[0], flat: flat0 },
+                  { digit: 1, pct: pct[1], flat: flat1 },
+                  { digit: 2, pct: pct[2], flat: flat2 },
+                ],
+                exhaustionStatus: exhaustConfirmed ? "CONFIRMED" : "FORMING",
+                momentum: "BULLISH",
+                entryPrice,
+                lastDigit: lastD,
+                safeBarrier: safe.barrier,
+                pWin: safe.pWin,
+                survival5: safe.survival,
+              };
+              o2.push(sig);
+
+              const lastTs = o2CooldownRef.current[s.symbol] ?? 0;
+              if (finalConf >= 70 && now - lastTs > COOLDOWN_MS) {
+                o2CooldownRef.current[s.symbol] = now;
+                const resolved: ResolvedSignal = { ...sig, outcome: "PENDING" };
+                newO2History.push(resolved);
+                pendingRef.current.push({
+                  sig: resolved,
+                  remaining: RESOLUTION_TICKS,
+                  hadWin: false,
+                });
+              }
+            }
+          }
+
+          // ============ UNDER 7 STRATEGY (mirror) ============
+          // Setup: high digits (7,8,9) dominated but exhausting; low digits
+          // (0,1,2) suppressed but quietly rising → expect shift < 7.
+          {
+            const sl0 = slope(snaps, 0);
+            const sl1 = slope(snaps, 1);
+            const sl2 = slope(snaps, 2);
+            const sl7 = slope(snaps, 7);
+            const sl8 = slope(snaps, 8);
+            const sl9 = slope(snaps, 9);
+            const flat7 = flatness(snaps, 7);
+            const flat8 = flatness(snaps, 8);
+            const flat9 = flatness(snaps, 9);
+
+            const hotOk = hotD === 5 || hotD === 7 || hotD === 9;
+            const coldOk = coldD === 0 || coldD === 2 || coldD === 4;
+
+            const highsCount = [pct[7], pct[8], pct[9]].filter((p) => p > 0.105).length;
+            const highsElevated = highsCount >= 2;
+            const exhCount =
+              (flat7 > 0.5 || sl7 <= 0 ? 1 : 0) +
+              (flat8 > 0.5 || sl8 <= 0 ? 1 : 0) +
+              (flat9 > 0.5 || sl9 <= 0 ? 1 : 0);
+            const highsExhausting = exhCount >= 2;
+            const exhaustConfirmed = highsElevated && flat7 > 0.55 && flat8 > 0.55 && flat9 > 0.55;
+
+            const lowsCount = [pct[0], pct[1], pct[2]].filter((p) => p < 0.105).length;
+            const lowsSuppressed = lowsCount >= 2;
+            const risingCount = [sl0, sl1, sl2].filter((s) => s > 0).length;
+            const lowsRising = risingCount >= 2;
+
+            const manipOk = intel.manipulation < 0.2;
+            const allOk =
+              hotOk &&
+              coldOk &&
+              highsElevated &&
+              highsExhausting &&
+              lowsSuppressed &&
+              lowsRising &&
+              manipOk &&
+              snaps.length >= 3;
+
+            if (allOk) {
+              const base = 65;
+              const highEdge = Math.min(15, (pct[7] + pct[8] + pct[9] - 0.33) * 100);
+              const lowBuild = Math.min(15, Math.max(0, sl0 + sl1 + sl2) * 400);
+              const calm = Math.max(0, 0.3 - intel.manipulation) * 30;
+              const exh = exhaustConfirmed ? 8 : 4;
+              const finalConf = Math.min(
+                98,
+                Math.max(70, Math.round(base + highEdge + lowBuild + calm + exh)),
+              );
+
+              const safe = pickSafeBarrier(ticks, "UNDER", 5, 0.8);
+              const sig: AdvancedSignal = {
+                id: `u7-${s.symbol}-${now}`,
+                type: "UNDER7",
+                symbol: s.symbol,
+                name: s.name,
+                ts: now,
+                conf: finalConf,
+                manipulation: intel.manipulation,
+                pOver5: ou5.pOver,
+                pUnder5: ou5.pUnder,
+                greenDigits: [5, 7, 9],
+                redDigits: [0, 2, 4],
+                buildup: [
+                  { digit: 0, pct: pct[0], slope: sl0 },
+                  { digit: 1, pct: pct[1], slope: sl1 },
+                  { digit: 2, pct: pct[2], slope: sl2 },
+                ],
+                exhaustion: [
+                  { digit: 7, pct: pct[7], flat: flat7 },
+                  { digit: 8, pct: pct[8], flat: flat8 },
+                  { digit: 9, pct: pct[9], flat: flat9 },
+                ],
+                exhaustionStatus: exhaustConfirmed ? "CONFIRMED" : "FORMING",
+                momentum: "BEARISH",
+                entryPrice,
+                lastDigit: lastD,
+                safeBarrier: safe.barrier,
+                pWin: safe.pWin,
+                survival5: safe.survival,
+              };
+              u7.push(sig);
+
+              const lastTs = u7CooldownRef.current[s.symbol] ?? 0;
+              if (finalConf >= 70 && now - lastTs > COOLDOWN_MS) {
+                u7CooldownRef.current[s.symbol] = now;
+                const resolved: ResolvedSignal = { ...sig, outcome: "PENDING" };
+                newU7History.push(resolved);
+                pendingRef.current.push({
+                  sig: resolved,
+                  remaining: RESOLUTION_TICKS,
+                  hadWin: false,
+                });
+              }
+            }
+          }
+        }
+
+        setOver2Signals(o2);
+        setUnder7Signals(u7);
+        if (newO2History.length) {
+          setOver2History((prev) => [...newO2History, ...prev].slice(0, HISTORY_MAX));
+        }
+        if (newU7History.length) {
+          setUnder7History((prev) => [...newU7History, ...prev].slice(0, HISTORY_MAX));
+        }
+      });
+    };
+
+    const resolvePending = (sym: string, newPrice: number) => {
+      if (!pendingRef.current.length) return;
+      const d = lastDigit(newPrice);
+      let o2W = 0,
+        o2L = 0,
+        u7W = 0,
+        u7L = 0;
+      const remaining: typeof pendingRef.current = [];
+      const finalisedO2: ResolvedSignal[] = [];
+      const finalisedU7: ResolvedSignal[] = [];
+      for (const p of pendingRef.current) {
+        if (p.sig.symbol !== sym) {
+          remaining.push(p);
+          continue;
+        }
+        // Win condition: OVER 2 => digit > 2 ; UNDER 7 => digit < 7
+        const hit = p.sig.type === "OVER2" ? d > 2 : d < 7;
+        if (hit) p.hadWin = true;
+        p.remaining -= 1;
+        if (p.remaining <= 0) {
+          const outcome: "WIN" | "LOSS" = p.hadWin ? "WIN" : "LOSS";
+          const finalised: ResolvedSignal = { ...p.sig, outcome, resolvedAt: Date.now() };
+          if (p.sig.type === "OVER2") {
+            finalisedO2.push(finalised);
+            if (outcome === "WIN") o2W++;
+            else o2L++;
+          } else {
+            finalisedU7.push(finalised);
+            if (outcome === "WIN") u7W++;
+            else u7L++;
+          }
+        } else {
+          remaining.push(p);
+        }
+      }
+      pendingRef.current = remaining;
+      if (finalisedO2.length) {
+        setOver2History((prev) => {
+          const map = new Map(prev.map((h) => [h.id, h]));
+          for (const f of finalisedO2) map.set(f.id, f);
+          return [...map.values()].sort((a, b) => b.ts - a.ts).slice(0, HISTORY_MAX);
+        });
+      }
+      if (finalisedU7.length) {
+        setUnder7History((prev) => {
+          const map = new Map(prev.map((h) => [h.id, h]));
+          for (const f of finalisedU7) map.set(f.id, f);
+          return [...map.values()].sort((a, b) => b.ts - a.ts).slice(0, HISTORY_MAX);
+        });
+      }
+      if (o2W || o2L) {
+        setOver2WinRate((p) => {
+          const wins = p.wins + o2W,
+            losses = p.losses + o2L;
+          const total = wins + losses;
+          if (total <= WINRATE_MAX) return { wins, losses };
+          const ratio = WINRATE_MAX / total;
+          return { wins: Math.round(wins * ratio), losses: Math.round(losses * ratio) };
+        });
+      }
+      if (u7W || u7L) {
+        setUnder7WinRate((p) => {
+          const wins = p.wins + u7W,
+            losses = p.losses + u7L;
+          const total = wins + losses;
+          if (total <= WINRATE_MAX) return { wins, losses };
+          const ratio = WINRATE_MAX / total;
+          return { wins: Math.round(wins * ratio), losses: Math.round(losses * ratio) };
+        });
+      }
+    };
+
+    const unsubStatus = derivBus.onStatus((s) =>
+      setStatus(
+        s === "live"
+          ? "live"
+          : s === "connecting"
+            ? "connecting"
+            : s === "error"
+              ? "error"
+              : "idle",
+      ),
+    );
+    const unsubHistory = derivBus.onHistory((sym, ticks) => {
+      if (!SCAN_SET.has(sym)) return;
+      ticksRef.current[sym] = ticks.length > MAX_TICKS ? ticks.slice(-MAX_TICKS) : [...ticks];
+      scheduleRecompute();
+    });
+    const unsubTick = derivBus.onTick((sym, tick) => {
+      if (!SCAN_SET.has(sym)) return;
+      const arr = ticksRef.current[sym] ?? [];
+      arr.push(tick);
+      if (arr.length > MAX_TICKS) arr.splice(0, arr.length - MAX_TICKS);
+      ticksRef.current[sym] = arr;
+      resolvePending(sym, tick.price);
+      scheduleRecompute();
+    });
+    const unsubSym = derivBus.subscribe(SCAN_SYMBOLS.map((s) => s.symbol));
+
+    return () => {
+      if (raf !== null) cancelAnimationFrame(raf);
+      if (timer !== null) clearTimeout(timer);
+      unsubTick();
+      unsubHistory();
+      unsubStatus();
+      unsubSym();
+    };
+  }, [enabled]);
+
+  return {
+    over2Signals,
+    under7Signals,
+    over2History,
+    under7History,
+    over2WinRate,
+    under7WinRate,
+    status,
+    scannedCount: SCAN_SYMBOLS.length,
+  };
+}
