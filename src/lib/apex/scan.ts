@@ -891,10 +891,13 @@ export function rankOpportunities(
         clearance,
         evidence,
         blocked:
+          governance.vetoed ||
           clearance.state === "BLOCKED" ||
           entryClearance.verdict === "BLOCKED" ||
           digitPsychology.hardBlock ||
           priceAction.veto,
+        governance,
+        stateEvidence,
         factors,
         invalidation,
         direction,
@@ -923,6 +926,7 @@ export function rankOpportunities(
           grade: setup.grade,
           relative: "LEVEL",
           blocked:
+            governance.vetoed ||
             clearance.state === "BLOCKED" ||
             entryClearance.verdict === "BLOCKED" ||
             digitPsychology.hardBlock ||

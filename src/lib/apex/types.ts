@@ -337,6 +337,10 @@ export interface RankedOpportunity {
   calibration?: import("../sentinel/calibration").CalibrationResult | null;
   /** ENGINE #4 — VARIABLE-ORDER MARKOV / CONTEXT ENGINE evaluation. */
   contextMarkov?: import("../sentinel/context-engine").VariableOrderMarkovReport | null;
+  /** LEVELS 1 & 2 — trader global veto + cross-market pattern risk governance. */
+  governance?: import("../sentinel/global-veto").SignalGovernanceResult | null;
+  /** Statistical interpretation of the resolved simulated-outcome sequence. */
+  stateEvidence?: import("../sentinel/market-state-evidence").EvidenceProfile | null;
 }
 
 /** One transparent, signed contribution to a market's ranking score. */
