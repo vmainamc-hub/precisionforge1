@@ -10,33 +10,407 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as TerminalRouteImport } from './routes/terminal'
+import { Route as AuthenticatedApexRouteImport } from './routes/_authenticated/apex'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as AuthenticatedPrecisionEdgeRouteImport } from './routes/_authenticated/precision-edge'
+import { Route as AuthenticatedPrecisionParityRouteImport } from './routes/_authenticated/precision-parity'
+import { Route as AuthenticatedPrecisionTrendRouteImport } from './routes/_authenticated/precision-trend'
+import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
+import { Route as AuthenticatedAppAnalyticsRouteImport } from './routes/_authenticated/app.analytics'
+import { Route as AuthenticatedAppApexRouteImport } from './routes/_authenticated/app.apex'
+import { Route as AuthenticatedAppAutoTradingRouteImport } from './routes/_authenticated/app.auto-trading'
+import { Route as AuthenticatedAppBotBuilderRouteImport } from './routes/_authenticated/app.bot-builder'
+import { Route as AuthenticatedAppBotLibraryRouteImport } from './routes/_authenticated/app.bot-library'
+import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authenticated/app.dashboard'
+import { Route as AuthenticatedAppDerivCallbackRouteImport } from './routes/_authenticated/app.deriv-callback'
+import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authenticated/app.history'
+import { Route as AuthenticatedAppJournalRouteImport } from './routes/_authenticated/app.journal'
+import { Route as AuthenticatedAppNewsRouteImport } from './routes/_authenticated/app.news'
+import { Route as AuthenticatedAppPrecisionEdgeRouteImport } from './routes/_authenticated/app.precision-edge'
+import { Route as AuthenticatedAppPrecisionParityRouteImport } from './routes/_authenticated/app.precision-parity'
+import { Route as AuthenticatedAppPrecisionTrendRouteImport } from './routes/_authenticated/app.precision-trend'
+import { Route as AuthenticatedAppScannerRouteImport } from './routes/_authenticated/app.scanner'
+import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
+import { Route as AuthenticatedAppSignalsRouteImport } from './routes/_authenticated/app.signals'
+import { Route as AuthenticatedAppTradingRouteImport } from './routes/_authenticated/app.trading'
+import { Route as AuthenticatedAppScannerIndexRouteImport } from './routes/_authenticated/app.scanner.index'
+import { Route as AuthenticatedAppScannerDigitsRouteImport } from './routes/_authenticated/app.scanner.digits'
+import { Route as AuthenticatedAppScannerVolatilityRouteImport } from './routes/_authenticated/app.scanner.volatility'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminalRoute = TerminalRouteImport.update({
+  id: '/terminal',
+  path: '/terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedApexRoute = AuthenticatedApexRouteImport.update({
+  id: '/apex',
+  path: '/apex',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPrecisionEdgeRoute =
+  AuthenticatedPrecisionEdgeRouteImport.update({
+    id: '/precision-edge',
+    path: '/precision-edge',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPrecisionParityRoute =
+  AuthenticatedPrecisionParityRouteImport.update({
+    id: '/precision-parity',
+    path: '/precision-parity',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPrecisionTrendRoute =
+  AuthenticatedPrecisionTrendRouteImport.update({
+    id: '/precision-trend',
+    path: '/precision-trend',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppAdminRoute = AuthenticatedAppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppAnalyticsRoute =
+  AuthenticatedAppAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppApexRoute = AuthenticatedAppApexRouteImport.update({
+  id: '/apex',
+  path: '/apex',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppAutoTradingRoute =
+  AuthenticatedAppAutoTradingRouteImport.update({
+    id: '/auto-trading',
+    path: '/auto-trading',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppBotBuilderRoute =
+  AuthenticatedAppBotBuilderRouteImport.update({
+    id: '/bot-builder',
+    path: '/bot-builder',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppBotLibraryRoute =
+  AuthenticatedAppBotLibraryRouteImport.update({
+    id: '/bot-library',
+    path: '/bot-library',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppDashboardRoute =
+  AuthenticatedAppDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppDerivCallbackRoute =
+  AuthenticatedAppDerivCallbackRouteImport.update({
+    id: '/deriv-callback',
+    path: '/deriv-callback',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppHistoryRoute = AuthenticatedAppHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppJournalRoute = AuthenticatedAppJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppNewsRoute = AuthenticatedAppNewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppPrecisionEdgeRoute =
+  AuthenticatedAppPrecisionEdgeRouteImport.update({
+    id: '/precision-edge',
+    path: '/precision-edge',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPrecisionParityRoute =
+  AuthenticatedAppPrecisionParityRouteImport.update({
+    id: '/precision-parity',
+    path: '/precision-parity',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPrecisionTrendRoute =
+  AuthenticatedAppPrecisionTrendRouteImport.update({
+    id: '/precision-trend',
+    path: '/precision-trend',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppScannerRoute = AuthenticatedAppScannerRouteImport.update({
+  id: '/scanner',
+  path: '/scanner',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppSettingsRoute =
+  AuthenticatedAppSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSignalsRoute = AuthenticatedAppSignalsRouteImport.update({
+  id: '/signals',
+  path: '/signals',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppTradingRoute = AuthenticatedAppTradingRouteImport.update({
+  id: '/trading',
+  path: '/trading',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppScannerIndexRoute =
+  AuthenticatedAppScannerIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAppScannerRoute,
+  } as any)
+const AuthenticatedAppScannerDigitsRoute =
+  AuthenticatedAppScannerDigitsRouteImport.update({
+    id: '/digits',
+    path: '/digits',
+    getParentRoute: () => AuthenticatedAppScannerRoute,
+  } as any)
+const AuthenticatedAppScannerVolatilityRoute =
+  AuthenticatedAppScannerVolatilityRouteImport.update({
+    id: '/volatility',
+    path: '/volatility',
+    getParentRoute: () => AuthenticatedAppScannerRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/terminal': typeof TerminalRoute
+  '/apex': typeof AuthenticatedApexRoute
+  '/app': typeof AuthenticatedAppRouteWithChildren
+  '/precision-edge': typeof AuthenticatedPrecisionEdgeRoute
+  '/precision-parity': typeof AuthenticatedPrecisionParityRoute
+  '/precision-trend': typeof AuthenticatedPrecisionTrendRoute
+  '/app/admin': typeof AuthenticatedAppAdminRoute
+  '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
+  '/app/apex': typeof AuthenticatedAppApexRoute
+  '/app/auto-trading': typeof AuthenticatedAppAutoTradingRoute
+  '/app/bot-builder': typeof AuthenticatedAppBotBuilderRoute
+  '/app/bot-library': typeof AuthenticatedAppBotLibraryRoute
+  '/app/dashboard': typeof AuthenticatedAppDashboardRoute
+  '/app/deriv-callback': typeof AuthenticatedAppDerivCallbackRoute
+  '/app/history': typeof AuthenticatedAppHistoryRoute
+  '/app/journal': typeof AuthenticatedAppJournalRoute
+  '/app/news': typeof AuthenticatedAppNewsRoute
+  '/app/precision-edge': typeof AuthenticatedAppPrecisionEdgeRoute
+  '/app/precision-parity': typeof AuthenticatedAppPrecisionParityRoute
+  '/app/precision-trend': typeof AuthenticatedAppPrecisionTrendRoute
+  '/app/scanner': typeof AuthenticatedAppScannerRouteWithChildren
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/signals': typeof AuthenticatedAppSignalsRoute
+  '/app/trading': typeof AuthenticatedAppTradingRoute
+  '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/scanner/digits': typeof AuthenticatedAppScannerDigitsRoute
+  '/app/scanner/volatility': typeof AuthenticatedAppScannerVolatilityRoute
+  '/app/scanner/': typeof AuthenticatedAppScannerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/terminal': typeof TerminalRoute
+  '/apex': typeof AuthenticatedApexRoute
+  '/precision-edge': typeof AuthenticatedPrecisionEdgeRoute
+  '/precision-parity': typeof AuthenticatedPrecisionParityRoute
+  '/precision-trend': typeof AuthenticatedPrecisionTrendRoute
+  '/app/admin': typeof AuthenticatedAppAdminRoute
+  '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
+  '/app/apex': typeof AuthenticatedAppApexRoute
+  '/app/auto-trading': typeof AuthenticatedAppAutoTradingRoute
+  '/app/bot-builder': typeof AuthenticatedAppBotBuilderRoute
+  '/app/bot-library': typeof AuthenticatedAppBotLibraryRoute
+  '/app/dashboard': typeof AuthenticatedAppDashboardRoute
+  '/app/deriv-callback': typeof AuthenticatedAppDerivCallbackRoute
+  '/app/history': typeof AuthenticatedAppHistoryRoute
+  '/app/journal': typeof AuthenticatedAppJournalRoute
+  '/app/news': typeof AuthenticatedAppNewsRoute
+  '/app/precision-edge': typeof AuthenticatedAppPrecisionEdgeRoute
+  '/app/precision-parity': typeof AuthenticatedAppPrecisionParityRoute
+  '/app/precision-trend': typeof AuthenticatedAppPrecisionTrendRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/signals': typeof AuthenticatedAppSignalsRoute
+  '/app/trading': typeof AuthenticatedAppTradingRoute
+  '/app': typeof AuthenticatedAppIndexRoute
+  '/app/scanner/digits': typeof AuthenticatedAppScannerDigitsRoute
+  '/app/scanner/volatility': typeof AuthenticatedAppScannerVolatilityRoute
+  '/app/scanner': typeof AuthenticatedAppScannerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/terminal': typeof TerminalRoute
+  '/_authenticated/apex': typeof AuthenticatedApexRoute
+  '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/precision-edge': typeof AuthenticatedPrecisionEdgeRoute
+  '/_authenticated/precision-parity': typeof AuthenticatedPrecisionParityRoute
+  '/_authenticated/precision-trend': typeof AuthenticatedPrecisionTrendRoute
+  '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
+  '/_authenticated/app/analytics': typeof AuthenticatedAppAnalyticsRoute
+  '/_authenticated/app/apex': typeof AuthenticatedAppApexRoute
+  '/_authenticated/app/auto-trading': typeof AuthenticatedAppAutoTradingRoute
+  '/_authenticated/app/bot-builder': typeof AuthenticatedAppBotBuilderRoute
+  '/_authenticated/app/bot-library': typeof AuthenticatedAppBotLibraryRoute
+  '/_authenticated/app/dashboard': typeof AuthenticatedAppDashboardRoute
+  '/_authenticated/app/deriv-callback': typeof AuthenticatedAppDerivCallbackRoute
+  '/_authenticated/app/history': typeof AuthenticatedAppHistoryRoute
+  '/_authenticated/app/journal': typeof AuthenticatedAppJournalRoute
+  '/_authenticated/app/news': typeof AuthenticatedAppNewsRoute
+  '/_authenticated/app/precision-edge': typeof AuthenticatedAppPrecisionEdgeRoute
+  '/_authenticated/app/precision-parity': typeof AuthenticatedAppPrecisionParityRoute
+  '/_authenticated/app/precision-trend': typeof AuthenticatedAppPrecisionTrendRoute
+  '/_authenticated/app/scanner': typeof AuthenticatedAppScannerRouteWithChildren
+  '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/_authenticated/app/signals': typeof AuthenticatedAppSignalsRoute
+  '/_authenticated/app/trading': typeof AuthenticatedAppTradingRoute
+  '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/scanner/digits': typeof AuthenticatedAppScannerDigitsRoute
+  '/_authenticated/app/scanner/volatility': typeof AuthenticatedAppScannerVolatilityRoute
+  '/_authenticated/app/scanner/': typeof AuthenticatedAppScannerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/terminal'
+    | '/apex'
+    | '/app'
+    | '/precision-edge'
+    | '/precision-parity'
+    | '/precision-trend'
+    | '/app/admin'
+    | '/app/analytics'
+    | '/app/apex'
+    | '/app/auto-trading'
+    | '/app/bot-builder'
+    | '/app/bot-library'
+    | '/app/dashboard'
+    | '/app/deriv-callback'
+    | '/app/history'
+    | '/app/journal'
+    | '/app/news'
+    | '/app/precision-edge'
+    | '/app/precision-parity'
+    | '/app/precision-trend'
+    | '/app/scanner'
+    | '/app/settings'
+    | '/app/signals'
+    | '/app/trading'
+    | '/app/'
+    | '/app/scanner/digits'
+    | '/app/scanner/volatility'
+    | '/app/scanner/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/terminal'
+    | '/apex'
+    | '/precision-edge'
+    | '/precision-parity'
+    | '/precision-trend'
+    | '/app/admin'
+    | '/app/analytics'
+    | '/app/apex'
+    | '/app/auto-trading'
+    | '/app/bot-builder'
+    | '/app/bot-library'
+    | '/app/dashboard'
+    | '/app/deriv-callback'
+    | '/app/history'
+    | '/app/journal'
+    | '/app/news'
+    | '/app/precision-edge'
+    | '/app/precision-parity'
+    | '/app/precision-trend'
+    | '/app/settings'
+    | '/app/signals'
+    | '/app/trading'
+    | '/app'
+    | '/app/scanner/digits'
+    | '/app/scanner/volatility'
+    | '/app/scanner'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/terminal'
+    | '/_authenticated/apex'
+    | '/_authenticated/app'
+    | '/_authenticated/precision-edge'
+    | '/_authenticated/precision-parity'
+    | '/_authenticated/precision-trend'
+    | '/_authenticated/app/admin'
+    | '/_authenticated/app/analytics'
+    | '/_authenticated/app/apex'
+    | '/_authenticated/app/auto-trading'
+    | '/_authenticated/app/bot-builder'
+    | '/_authenticated/app/bot-library'
+    | '/_authenticated/app/dashboard'
+    | '/_authenticated/app/deriv-callback'
+    | '/_authenticated/app/history'
+    | '/_authenticated/app/journal'
+    | '/_authenticated/app/news'
+    | '/_authenticated/app/precision-edge'
+    | '/_authenticated/app/precision-parity'
+    | '/_authenticated/app/precision-trend'
+    | '/_authenticated/app/scanner'
+    | '/_authenticated/app/settings'
+    | '/_authenticated/app/signals'
+    | '/_authenticated/app/trading'
+    | '/_authenticated/app/'
+    | '/_authenticated/app/scanner/digits'
+    | '/_authenticated/app/scanner/volatility'
+    | '/_authenticated/app/scanner/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  TerminalRoute: typeof TerminalRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +422,309 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terminal': {
+      id: '/terminal'
+      path: '/terminal'
+      fullPath: '/terminal'
+      preLoaderRoute: typeof TerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/apex': {
+      id: '/_authenticated/apex'
+      path: '/apex'
+      fullPath: '/apex'
+      preLoaderRoute: typeof AuthenticatedApexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/precision-edge': {
+      id: '/_authenticated/precision-edge'
+      path: '/precision-edge'
+      fullPath: '/precision-edge'
+      preLoaderRoute: typeof AuthenticatedPrecisionEdgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/precision-parity': {
+      id: '/_authenticated/precision-parity'
+      path: '/precision-parity'
+      fullPath: '/precision-parity'
+      preLoaderRoute: typeof AuthenticatedPrecisionParityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/precision-trend': {
+      id: '/_authenticated/precision-trend'
+      path: '/precision-trend'
+      fullPath: '/precision-trend'
+      preLoaderRoute: typeof AuthenticatedPrecisionTrendRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/': {
+      id: '/_authenticated/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/admin': {
+      id: '/_authenticated/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AuthenticatedAppAdminRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/analytics': {
+      id: '/_authenticated/app/analytics'
+      path: '/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AuthenticatedAppAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/apex': {
+      id: '/_authenticated/app/apex'
+      path: '/apex'
+      fullPath: '/app/apex'
+      preLoaderRoute: typeof AuthenticatedAppApexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/auto-trading': {
+      id: '/_authenticated/app/auto-trading'
+      path: '/auto-trading'
+      fullPath: '/app/auto-trading'
+      preLoaderRoute: typeof AuthenticatedAppAutoTradingRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/bot-builder': {
+      id: '/_authenticated/app/bot-builder'
+      path: '/bot-builder'
+      fullPath: '/app/bot-builder'
+      preLoaderRoute: typeof AuthenticatedAppBotBuilderRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/bot-library': {
+      id: '/_authenticated/app/bot-library'
+      path: '/bot-library'
+      fullPath: '/app/bot-library'
+      preLoaderRoute: typeof AuthenticatedAppBotLibraryRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/dashboard': {
+      id: '/_authenticated/app/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AuthenticatedAppDashboardRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/deriv-callback': {
+      id: '/_authenticated/app/deriv-callback'
+      path: '/deriv-callback'
+      fullPath: '/app/deriv-callback'
+      preLoaderRoute: typeof AuthenticatedAppDerivCallbackRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/history': {
+      id: '/_authenticated/app/history'
+      path: '/history'
+      fullPath: '/app/history'
+      preLoaderRoute: typeof AuthenticatedAppHistoryRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/journal': {
+      id: '/_authenticated/app/journal'
+      path: '/journal'
+      fullPath: '/app/journal'
+      preLoaderRoute: typeof AuthenticatedAppJournalRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/news': {
+      id: '/_authenticated/app/news'
+      path: '/news'
+      fullPath: '/app/news'
+      preLoaderRoute: typeof AuthenticatedAppNewsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/precision-edge': {
+      id: '/_authenticated/app/precision-edge'
+      path: '/precision-edge'
+      fullPath: '/app/precision-edge'
+      preLoaderRoute: typeof AuthenticatedAppPrecisionEdgeRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/precision-parity': {
+      id: '/_authenticated/app/precision-parity'
+      path: '/precision-parity'
+      fullPath: '/app/precision-parity'
+      preLoaderRoute: typeof AuthenticatedAppPrecisionParityRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/precision-trend': {
+      id: '/_authenticated/app/precision-trend'
+      path: '/precision-trend'
+      fullPath: '/app/precision-trend'
+      preLoaderRoute: typeof AuthenticatedAppPrecisionTrendRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/scanner': {
+      id: '/_authenticated/app/scanner'
+      path: '/scanner'
+      fullPath: '/app/scanner'
+      preLoaderRoute: typeof AuthenticatedAppScannerRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/settings': {
+      id: '/_authenticated/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/signals': {
+      id: '/_authenticated/app/signals'
+      path: '/signals'
+      fullPath: '/app/signals'
+      preLoaderRoute: typeof AuthenticatedAppSignalsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/trading': {
+      id: '/_authenticated/app/trading'
+      path: '/trading'
+      fullPath: '/app/trading'
+      preLoaderRoute: typeof AuthenticatedAppTradingRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/scanner/': {
+      id: '/_authenticated/app/scanner/'
+      path: '/'
+      fullPath: '/app/scanner/'
+      preLoaderRoute: typeof AuthenticatedAppScannerIndexRouteImport
+      parentRoute: typeof AuthenticatedAppScannerRoute
+    }
+    '/_authenticated/app/scanner/digits': {
+      id: '/_authenticated/app/scanner/digits'
+      path: '/digits'
+      fullPath: '/app/scanner/digits'
+      preLoaderRoute: typeof AuthenticatedAppScannerDigitsRouteImport
+      parentRoute: typeof AuthenticatedAppScannerRoute
+    }
+    '/_authenticated/app/scanner/volatility': {
+      id: '/_authenticated/app/scanner/volatility'
+      path: '/volatility'
+      fullPath: '/app/scanner/volatility'
+      preLoaderRoute: typeof AuthenticatedAppScannerVolatilityRouteImport
+      parentRoute: typeof AuthenticatedAppScannerRoute
+    }
   }
 }
 
+interface AuthenticatedAppScannerRouteChildren {
+  AuthenticatedAppScannerDigitsRoute: typeof AuthenticatedAppScannerDigitsRoute
+  AuthenticatedAppScannerVolatilityRoute: typeof AuthenticatedAppScannerVolatilityRoute
+  AuthenticatedAppScannerIndexRoute: typeof AuthenticatedAppScannerIndexRoute
+}
+
+const AuthenticatedAppScannerRouteChildren: AuthenticatedAppScannerRouteChildren =
+  {
+    AuthenticatedAppScannerDigitsRoute: AuthenticatedAppScannerDigitsRoute,
+    AuthenticatedAppScannerVolatilityRoute:
+      AuthenticatedAppScannerVolatilityRoute,
+    AuthenticatedAppScannerIndexRoute: AuthenticatedAppScannerIndexRoute,
+  }
+
+const AuthenticatedAppScannerRouteWithChildren =
+  AuthenticatedAppScannerRoute._addFileChildren(
+    AuthenticatedAppScannerRouteChildren,
+  )
+
+interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAdminRoute: typeof AuthenticatedAppAdminRoute
+  AuthenticatedAppAnalyticsRoute: typeof AuthenticatedAppAnalyticsRoute
+  AuthenticatedAppApexRoute: typeof AuthenticatedAppApexRoute
+  AuthenticatedAppAutoTradingRoute: typeof AuthenticatedAppAutoTradingRoute
+  AuthenticatedAppBotBuilderRoute: typeof AuthenticatedAppBotBuilderRoute
+  AuthenticatedAppBotLibraryRoute: typeof AuthenticatedAppBotLibraryRoute
+  AuthenticatedAppDashboardRoute: typeof AuthenticatedAppDashboardRoute
+  AuthenticatedAppDerivCallbackRoute: typeof AuthenticatedAppDerivCallbackRoute
+  AuthenticatedAppHistoryRoute: typeof AuthenticatedAppHistoryRoute
+  AuthenticatedAppJournalRoute: typeof AuthenticatedAppJournalRoute
+  AuthenticatedAppNewsRoute: typeof AuthenticatedAppNewsRoute
+  AuthenticatedAppPrecisionEdgeRoute: typeof AuthenticatedAppPrecisionEdgeRoute
+  AuthenticatedAppPrecisionParityRoute: typeof AuthenticatedAppPrecisionParityRoute
+  AuthenticatedAppPrecisionTrendRoute: typeof AuthenticatedAppPrecisionTrendRoute
+  AuthenticatedAppScannerRoute: typeof AuthenticatedAppScannerRouteWithChildren
+  AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
+  AuthenticatedAppSignalsRoute: typeof AuthenticatedAppSignalsRoute
+  AuthenticatedAppTradingRoute: typeof AuthenticatedAppTradingRoute
+  AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+}
+
+const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAdminRoute: AuthenticatedAppAdminRoute,
+  AuthenticatedAppAnalyticsRoute: AuthenticatedAppAnalyticsRoute,
+  AuthenticatedAppApexRoute: AuthenticatedAppApexRoute,
+  AuthenticatedAppAutoTradingRoute: AuthenticatedAppAutoTradingRoute,
+  AuthenticatedAppBotBuilderRoute: AuthenticatedAppBotBuilderRoute,
+  AuthenticatedAppBotLibraryRoute: AuthenticatedAppBotLibraryRoute,
+  AuthenticatedAppDashboardRoute: AuthenticatedAppDashboardRoute,
+  AuthenticatedAppDerivCallbackRoute: AuthenticatedAppDerivCallbackRoute,
+  AuthenticatedAppHistoryRoute: AuthenticatedAppHistoryRoute,
+  AuthenticatedAppJournalRoute: AuthenticatedAppJournalRoute,
+  AuthenticatedAppNewsRoute: AuthenticatedAppNewsRoute,
+  AuthenticatedAppPrecisionEdgeRoute: AuthenticatedAppPrecisionEdgeRoute,
+  AuthenticatedAppPrecisionParityRoute: AuthenticatedAppPrecisionParityRoute,
+  AuthenticatedAppPrecisionTrendRoute: AuthenticatedAppPrecisionTrendRoute,
+  AuthenticatedAppScannerRoute: AuthenticatedAppScannerRouteWithChildren,
+  AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
+  AuthenticatedAppSignalsRoute: AuthenticatedAppSignalsRoute,
+  AuthenticatedAppTradingRoute: AuthenticatedAppTradingRoute,
+  AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+}
+
+const AuthenticatedAppRouteWithChildren =
+  AuthenticatedAppRoute._addFileChildren(AuthenticatedAppRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedApexRoute: typeof AuthenticatedApexRoute
+  AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
+  AuthenticatedPrecisionEdgeRoute: typeof AuthenticatedPrecisionEdgeRoute
+  AuthenticatedPrecisionParityRoute: typeof AuthenticatedPrecisionParityRoute
+  AuthenticatedPrecisionTrendRoute: typeof AuthenticatedPrecisionTrendRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedApexRoute: AuthenticatedApexRoute,
+  AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
+  AuthenticatedPrecisionEdgeRoute: AuthenticatedPrecisionEdgeRoute,
+  AuthenticatedPrecisionParityRoute: AuthenticatedPrecisionParityRoute,
+  AuthenticatedPrecisionTrendRoute: AuthenticatedPrecisionTrendRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  TerminalRoute: TerminalRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

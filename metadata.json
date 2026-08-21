@@ -1,0 +1,6 @@
+{
+  "name": "Guidance Refinement",
+  "description": "APEX Sentinel & Precision Edge trading analysis, signal intelligence, and automated bot engine for Deriv synthetic indices.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
