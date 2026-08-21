@@ -53,8 +53,8 @@ export function patternInputsFromOpportunity(r: RankedOpportunity): PatternTagIn
     regime: r.regimeReport?.currentRegime ?? r.intel.regime?.label ?? null,
     psychologyVerdict: r.digitPsychology?.verdict ?? null,
     losingSideState: r.contract.losingSidePressure?.state ?? null,
-    alignment: r.priceAction?.alignment?.label ?? null,
-    entryTriggerRule: r.entryTrigger?.recommended?.rule ?? null,
+    alignment: r.priceAction?.alignment ?? null,
+    entryTriggerRule: r.entryTrigger?.preferredTouch ?? null,
   };
 }
 
