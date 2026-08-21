@@ -36,6 +36,7 @@ import { ExposurePanel } from "@/components/apex/ExposurePanel";
 import { SimulatorWindows } from "@/components/apex/SimulatorWindows";
 import { LearningDashboard } from "@/components/apex/LearningDashboard";
 import WhatSentinelLearned from "@/components/apex/WhatSentinelLearned";
+import GovernancePanel from "@/components/apex/GovernancePanel";
 import StagedVerdict from "@/components/apex/StagedVerdict";
 import SentinelEdgePanel from "@/components/apex/SentinelEdgePanel";
 import DigitPsychologyPanel from "@/components/apex/DigitPsychologyPanel";
@@ -456,6 +457,7 @@ function ApexPage() {
           </TabsContent>
 
           <TabsContent value="learning" className="mt-5 space-y-5">
+            <GovernancePanel best={best ?? null} />
             <WhatSentinelLearned />
             <LearningDashboard />
           </TabsContent>
