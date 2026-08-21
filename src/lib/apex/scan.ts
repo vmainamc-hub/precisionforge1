@@ -40,6 +40,9 @@ import { operatorSpecialDigitAction } from "../sentinel/operator-special-digits"
 import { computeConvergence } from "../sentinel/convergence";
 import { operatorLearningLookup } from "../sentinel/operator-learning";
 import { immediateGuidanceLookup } from "../sentinel/immediate-guidance";
+import { evaluateSignalGovernance } from "../sentinel/global-veto";
+import { buildPatternTags } from "../sentinel/pattern-tags";
+import { buildEvidenceProfile } from "../sentinel/market-state-evidence";
 import {
   hasValidatedEntryDigit,
   qualificationFor,
@@ -817,9 +820,7 @@ export function rankOpportunities(
       // ══ MARKET-STATE EVIDENCE — interpretation of the resolved sequence ══
       // A run of wins/losses is never treated as a forecast: the resolved
       // outcome history is read as evidence about the CURRENT market state.
-      const stateEvidence = buildEvidenceProfile(sim.perf?.recentResults ?? [], {
-        payoutOnWin: c.payout ?? undefined,
-      });
+      const stateEvidence = buildEvidenceProfile(sim.perf?.recentResults ?? []);
       factors.push({
         label: `Market-state evidence (${stateEvidence.regime})`,
         points: 0,
