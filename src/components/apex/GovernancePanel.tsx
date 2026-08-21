@@ -15,7 +15,12 @@ import { patternSignatureFromOpportunity } from "@/lib/sentinel/pattern-tags";
 
 function useVetoState() {
   const [, bump] = useState(0);
-  useEffect(() => subscribeGlobalVeto(() => bump((n) => n + 1)), []);
+  useEffect(() => {
+    const off = subscribeGlobalVeto(() => bump((n) => n + 1));
+    return () => {
+      off();
+    };
+  }, []);
   return {
     rules: activeGlobalVetoRules(),
     risks: allPatternRiskStats().slice(0, 8),
